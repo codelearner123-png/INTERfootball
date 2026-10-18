@@ -1,0 +1,1963 @@
+ <    !DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#07131c">
+    <title>VivaTech Football</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+            color: #f5f7fa;
+            background: #07131c;
+            font-synthesis: none;
+        }
+        * { box-sizing: border-box; }
+        body {
+            display: grid;
+            min-width: 320px;
+            min-height: 100vh;
+            margin: 0;
+            place-items: center;
+            background:
+                radial-gradient(ellipse at 50% 0, rgb(23 88 73 / 30%), transparent 48%),
+                #07131c;
+        }
+        button, select { font: inherit; }
+        button { color: inherit; }
+        button:focus-visible, select:focus-visible {
+            outline: 3px solid #58e0a3;
+            outline-offset: 3px;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100dvh;
+            min-height: 0;
+            overflow: hidden;
+            border: 1px solid #28433e;
+            background: #0c1d22;
+            box-shadow: 0 20px 70px #0009;
+        }
+        #loading-screen {
+            position: absolute;
+            z-index: 10;
+            inset: 0;
+            display: grid;
+            align-content: center;
+            justify-items: center;
+            gap: 16px;
+            background:
+                radial-gradient(ellipse at 50% 42%, rgb(38 133 89 / 30%), transparent 43%),
+                #07131c;
+            color: #d9f5e5;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: .04em;
+        }
+        #loading-screen[hidden] { display: none; }
+        .loading-ball { font-size: 48px; animation: loading-bounce .7s ease-in-out infinite alternate; }
+        @keyframes loading-bounce { to { transform: translateY(-12px) rotate(-16deg); } }
+        .loading-track { width: min(210px, 60%); height: 5px; overflow: hidden; border-radius: 5px; background: #233c34; }
+        .loading-track::after { display: block; width: 42%; height: 100%; border-radius: inherit; background: #8bf0bd; content: ""; animation: loading-progress 1s ease-in-out infinite alternate; }
+        @keyframes loading-progress { to { transform: translateX(140%); } }
+        .app-screen {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+        }
+        .app-screen.active { display: flex; }
+        #home-screen {
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+            padding: 32px 22px;
+            background:
+                linear-gradient(180deg, #07111a0d 0%, #07131c30 42%, #07131cf2 100%),
+                radial-gradient(ellipse at 50% 82%, #2f875d 0%, #1c503e 24%, #102824 48%, #08151d 74%);
+        }
+        #home-screen::before {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 12% 8%, #fff8cf58 0, #d4eff21d 15%, transparent 34%),
+                radial-gradient(ellipse at 88% 8%, #fff8cf58 0, #d4eff21d 15%, transparent 34%),
+                linear-gradient(180deg, #101b2a 0%, #1b2932 25%, transparent 57%);
+            content: "";
+            pointer-events: none;
+        }
+        #home-screen::after {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            height: 29%;
+            background:
+                repeating-linear-gradient(90deg, transparent 0 34px, #d7f1de0e 35px 37px),
+                linear-gradient(180deg, transparent, #081610a8),
+                repeating-linear-gradient(0deg, transparent 0 31px, #e4f8ea35 32px 33px);
+            clip-path: polygon(0 40%, 50% 0, 100% 40%, 100% 100%, 0 100%);
+            content: "";
+            pointer-events: none;
+        }
+        .home-content {
+            position: relative;
+            z-index: 1;
+            width: min(100%, 570px);
+            padding: clamp(18px, 3vw, 28px);
+            border: 1px solid #d6f1df38;
+            border-radius: 24px;
+            background: linear-gradient(145deg, #07141bd9, #0c201ddd);
+            box-shadow: 0 22px 80px #0009, inset 0 1px #ffffff14;
+            backdrop-filter: blur(12px);
+            text-align: center;
+        }
+        .game-profile {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin: 0 0 14px;
+            text-align: left;
+        }
+        .game-profile label { display: grid; gap: 6px; color: #c7d6cf; font-size: 11px; font-weight: 800; text-align: left; }
+        .game-profile select {
+            width: 100%;
+            min-height: 42px;
+            padding: 8px;
+            border: 1px solid #45665b;
+            border-radius: 8px;
+            background: #091713;
+            color: #f5f7fa;
+        }
+        .progress-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 0 0 14px;
+        }
+        .progress-chip { padding: 7px 11px; border: 1px solid #45615b; border-radius: 99px; background: #07131cbb; color: #d9e5e1; font-size: 12px; font-weight: 800; }
+        .progress-chip strong { color: #aaffd0; }
+        .cup-menu-button {
+            position: absolute;
+            z-index: 5;
+            top: 50%;
+            left: 12px;
+            min-height: 46px;
+            padding: 9px 12px;
+            transform: translateY(-50%);
+            border: 1px solid #b4dcbd88;
+            border-radius: 0 12px 12px 0;
+            background: #07151be8;
+            color: #fff1b0;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .cup-drawer {
+            position: absolute;
+            z-index: 4;
+            inset: 0 auto 0 0;
+            width: min(320px, calc(100% - 28px));
+            overflow-y: auto;
+            padding: 24px 18px;
+            transform: translateX(-105%);
+            border-right: 1px solid #9de6ba55;
+            background: linear-gradient(160deg, #102329f5, #081411f7);
+            box-shadow: 15px 0 45px #0008;
+            transition: transform .22s ease;
+        }
+        .cup-drawer.open { transform: translateX(0); }
+        .cup-drawer h2 { margin: 0 0 6px; font-size: 23px; }
+        .cup-drawer > p { margin: 0 0 16px; color: #b5c7c2; font-size: 12px; line-height: 1.5; }
+        .cup-card { margin: 10px 0; padding: 13px; border: 1px solid #46635a; border-radius: 13px; background: #162821; }
+        .cup-card h3 { margin: 0; color: #ffe39a; font-size: 14px; }
+        .cup-card p { margin: 6px 0 0; color: #c4d1cb; font-size: 12px; line-height: 1.5; }
+        .cup-progress { color: #a8f2c8 !important; font-weight: 800; }
+        .cup-close { float: right; min-height: 34px; }
+        .cup-drawer label { display: block; margin: 15px 0 7px; color: #c7d6cf; font-size: 12px; font-weight: 800; }
+        .cup-drawer select { width: 100%; min-height: 42px; margin-top: 6px; padding: 8px; border: 1px solid #45665b; border-radius: 8px; background: #091713; color: #f5f7fa; }
+        #cup-enter-button { width: 100%; margin: 14px 0 5px; border: 1px solid #7ce4ae; border-radius: 9px; background: #a4f2c4; color: #072318; font-weight: 850; cursor: pointer; }
+        .brand-mark {
+            display: grid;
+            width: 62px;
+            height: 62px;
+            margin: 0 auto 16px;
+            place-items: center;
+            border: 2px solid #8bf0bd;
+            border-radius: 50%;
+            background: #103d31;
+            color: #baffd8;
+            font-size: 32px;
+            box-shadow: 0 0 34px rgb(69 230 157 / 20%);
+        }
+        .eyebrow {
+            margin: 0 0 9px;
+            color: #9be7c0;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .2em;
+            text-transform: uppercase;
+        }
+        h1 {
+            margin: 0;
+            font-size: clamp(38px, 9vw, 64px);
+            font-weight: 900;
+            letter-spacing: -.06em;
+            line-height: .98;
+        }
+        .home-intro {
+            max-width: 410px;
+            margin: 16px auto 28px;
+            color: #c0d0ce;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .mode-list {
+            display: grid;
+            gap: 12px;
+            text-align: left;
+        }
+        .mode-button {
+            display: flex;
+            min-height: 82px;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 18px;
+            border: 1px solid #31564d;
+            border-radius: 12px;
+            background: linear-gradient(110deg, #17372f, #102922);
+            cursor: pointer;
+            text-align: left;
+            transition: border-color .16s ease, transform .16s ease, background .16s ease;
+        }
+        .mode-button:hover { transform: translateY(-2px); border-color: #8bf0bd; background: #1b4035; }
+        .mode-icon { font-size: 30px; }
+        .mode-copy { flex: 1; }
+        .mode-title { display: block; font-size: 16px; font-weight: 800; }
+        .mode-description { display: block; margin-top: 4px; color: #b5c7c2; font-size: 12px; line-height: 1.4; }
+        .mode-arrow { color: #9be7c0; font-size: 24px; }
+        .home-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 17px; }
+        .quiet-button {
+            padding: 10px 16px;
+            border: 1px solid #45615b;
+            border-radius: 8px;
+            background: rgb(7 19 28 / 65%);
+            color: #d9e5e1;
+            cursor: pointer;
+        }
+        .quiet-button:hover { border-color: #9be7c0; }
+        .home-help { margin: 18px 0 0; color: #a5b9b4; font-size: 12px; line-height: 1.5; }
+        #match-screen { justify-content: space-between; background: #091717; }
+        .match-header {
+            z-index: 2;
+            display: flex;
+            min-height: 74px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px clamp(12px, 3vw, 28px);
+            border-bottom: 1px solid #29443e;
+            background: #091515;
+        }
+        .team-label {
+            color: #bbcec7;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .12em;
+        }
+        .scoreboard {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            white-space: nowrap;
+        }
+        .scoreboard strong { font-size: 24px; }
+        .score-separator { color: #71827d; font-size: 19px; }
+        .team-home { text-align: right; }
+        .team-away { text-align: left; }
+        .match-center { min-width: 96px; text-align: center; }
+        #match-clock { color: #a8f2c8; font-size: 14px; font-weight: 900; font-variant-numeric: tabular-nums; }
+        #match-status { display: block; min-height: 14px; margin-top: 3px; color: #aabbb6; font-size: 10px; }
+        .header-buttons { display: flex; gap: 8px; }
+        .header-button {
+            min-height: 38px;
+            padding: 8px 12px;
+            border: 1px solid #3c544e;
+            border-radius: 7px;
+            background: #142620;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .header-button.primary { border-color: #7ce4ae; background: #a4f2c4; color: #072318; }
+        .header-button:hover { filter: brightness(1.13); }
+        .stadium-top {
+            flex: 0 0 auto;
+            padding: 7px 8px;
+            overflow: hidden;
+            border-bottom: 1px solid #304e41;
+            background: #11251c;
+            color: #c2d6c8;
+            text-align: center;
+            white-space: nowrap;
+            letter-spacing: 3px;
+        }
+        .stadium-top[data-stadium="rio"] { background: linear-gradient(90deg, #136844, #9bc746, #136844); }
+        .stadium-top[data-stadium="london"] { background: linear-gradient(90deg, #132a50, #314a7b, #132a50); }
+        .stadium-top[data-stadium="tokyo"] { background: linear-gradient(90deg, #501e32, #ae4658, #501e32); }
+        .stadium-top[data-stadium="lagos"] { background: linear-gradient(90deg, #1c543f, #aa8d3f, #1c543f); }
+        .stadium-top[data-stadium="marrakech"] { background: linear-gradient(90deg, #653823, #ba7542, #653823); }
+        #canvas-wrapper {
+            position: relative;
+            flex: 1 1 0;
+            width: 100%;
+            min-height: 0;
+            max-height: none;
+            align-self: center;
+            overflow: hidden;
+            background: #26764a;
+        }
+        #footballCanvas { display: block; width: 100%; height: 100%; touch-action: none; }
+        .controls {
+            display: flex;
+            min-height: 112px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 9px clamp(10px, 3vw, 28px);
+            border-top: 1px solid #29443e;
+            background: #091515;
+        }
+        .direction-pad {
+            display: grid;
+            width: 154px;
+            grid-template: 38px 38px / repeat(3, 1fr);
+            gap: 3px;
+        }
+        .control-button {
+            min-width: 48px;
+            min-height: 42px;
+            border: 1px solid #3c544e;
+            border-radius: 9px;
+            background: #172923;
+            color: #f0f6f2;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 800;
+            touch-action: none;
+            user-select: none;
+        }
+        .direction-pad .control-button { min-height: 38px; border-radius: 8px; font-size: 17px; }
+        .direction-pad [data-direction="up"] { grid-area: 1 / 2; }
+        .direction-pad [data-direction="left"] { grid-area: 2 / 1; }
+        .direction-pad [data-direction="down"] { grid-area: 2 / 2; }
+        .direction-pad [data-direction="right"] { grid-area: 2 / 3; }
+        .control-button:active, .control-button.pressed { border-color: #a6f2c7; background: #276245; }
+        .action-controls { display: flex; gap: 8px; }
+        .action-controls .control-button { min-width: 62px; padding: 0 8px; }
+        #pass-button { background: #21342b; }
+        #shoot-button { border-color: #72daa0; background: linear-gradient(140deg, #69d591, #2c9d66); color: #051b10; }
+        #kick-button { border-color: #71b7ee; background: linear-gradient(140deg, #64b6ef, #357ec1); color: #041b2c; }
+        #auto-play-button[aria-pressed="true"] { border-color: #ffe08a; background: linear-gradient(140deg, #ffe08a, #e7a93e); color: #352000; }
+        .match-nameplate { display: block; max-width: 120px; margin-top: 3px; overflow: hidden; color: #a8f2c8; font-size: 9px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+        #commentary-status { position: absolute; top: 10px; left: 50%; z-index: 1; max-width: min(90%, 440px); padding: 7px 12px; transform: translateX(-50%); border: 1px solid #ffffff33; border-radius: 99px; background: #07131ccc; color: #fff; font-size: 12px; text-align: center; pointer-events: none; }
+        #commentary-status[hidden] { display: none; }
+        .keyboard-hint { color: #8fa49a; font-size: 10px; line-height: 1.4; text-align: right; }
+        .keyboard-hint kbd {
+            padding: 2px 4px;
+            border: 1px solid #485d54;
+            border-radius: 4px;
+            background: #182721;
+            color: #d7e4dc;
+        }
+        .overlay {
+            position: absolute;
+            z-index: 5;
+            inset: 0;
+            display: grid;
+            padding: 18px;
+            place-items: center;
+            background: rgb(0 0 0 / 70%);
+        }
+        .overlay[hidden] { display: none; }
+        .dialog {
+            width: min(100%, 420px);
+            max-height: 90%;
+            overflow-y: auto;
+            padding: 22px;
+            border: 1px solid #45665b;
+            border-radius: 14px;
+            background: #10221d;
+            box-shadow: 0 18px 55px #0009;
+        }
+        .dialog h2 { margin: 0 0 10px; font-size: 21px; }
+        .dialog p { color: #bdcdc6; font-size: 14px; line-height: 1.6; }
+        .dialog label { display: block; margin: 18px 0 8px; color: #c7d6cf; font-size: 13px; font-weight: 700; }
+        .dialog select {
+            width: 100%;
+            min-height: 42px;
+            padding: 8px;
+            border: 1px solid #45665b;
+            border-radius: 7px;
+            background: #091713;
+            color: #fff;
+        }
+        .dialog input[type="text"], .dialog input[type="email"], .dialog input[type="number"] {
+            width: 100%;
+            min-height: 42px;
+            padding: 8px 10px;
+            border: 1px solid #45665b;
+            border-radius: 7px;
+            background: #091713;
+            color: #fff;
+        }
+        .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+        .dialog-actions .quiet-button, .dialog-actions .header-button { min-height: 40px; }
+        .audio-options { display: grid; gap: 10px; }
+        .dialog .audio-toggle { display: flex; align-items: center; gap: 10px; margin: 0; }
+        .audio-toggle input { width: 18px; height: 18px; accent-color: #78e3a7; }
+        .dialog input[type="file"] { width: 100%; color: #d9e5e1; font-size: 12px; }
+        #audio-status { min-height: 18px; margin-bottom: 0; font-size: 12px; }
+        .payment-methods { display: grid; gap: 8px; }
+        .dialog .payment-option { display: flex; align-items: center; gap: 9px; margin: 0; padding: 10px; border: 1px solid #365449; border-radius: 8px; }
+        .payment-option input { accent-color: #78e3a7; }
+        .price-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, 1fr); gap: 10px; }
+        .dialog .small-note { margin: 8px 0; font-size: 12px; }
+        .card-preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .card-preview-grid .card-number-label { grid-column: 1 / -1; }
+        .card-preview-grid input:disabled { color: #91a39a; opacity: 1; }
+        @media (max-width: 560px) {
+            #game-container { border: 0; }
+            .match-header { min-height: 66px; gap: 5px; padding-inline: 7px; }
+            .scoreboard { gap: 7px; }
+            .scoreboard strong { font-size: 21px; }
+            .team-label { font-size: 9px; letter-spacing: .06em; }
+            .match-center { min-width: 60px; }
+            .header-button { padding: 7px 9px; font-size: 10px; }
+            .controls { min-height: 132px; flex-wrap: wrap; justify-content: center; gap: 7px; padding-inline: 8px; }
+            .direction-pad { width: 142px; grid-template: 42px 42px / repeat(3, 1fr); }
+            .direction-pad .control-button { min-width: 42px; min-height: 42px; }
+            .action-controls { gap: 5px; }
+            .action-controls .control-button { min-width: 58px; min-height: 45px; padding-inline: 4px; font-size: 10px; }
+            .keyboard-hint { display: none; }
+            .game-profile { gap: 7px; }
+        }
+        @media (max-height: 650px) {
+            .controls { min-height: 82px; }
+            .direction-pad { grid-template-rows: 30px 30px; }
+            .direction-pad .control-button { min-height: 30px; }
+            .home-intro { margin-block: 10px 18px; }
+            .mode-button { min-height: 68px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body>
+    <main id="game-container">
+        <div id="loading-screen" role="status" aria-live="polite">
+            <div class="loading-ball" aria-hidden="true">⚽</div>
+            <span id="loading-message">Loading VivaTech Football…</span>
+            <div class="loading-track" aria-hidden="true"></div>
+        </div>
+        <section id="home-screen" class="app-screen active" aria-labelledby="game-title">
+            <button id="cup-menu-button" class="cup-menu-button" type="button" aria-expanded="false" aria-controls="cup-drawer">🏆 Cups</button>
+            <aside id="cup-drawer" class="cup-drawer" aria-label="Cup goals" aria-hidden="true">
+                <button id="cup-close" class="quiet-button cup-close" type="button">Close</button>
+                <h2>International Cups</h2>
+                <p>Choose a real-world competition and national sides. The game uses original generic characters, not official team kits or player likenesses.</p>
+                <label for="cup-select">Choose a competition
+                    <select id="cup-select">
+                        <option>FIFA World Cup</option>
+                        <option>UEFA European Championship</option>
+                        <option>Africa Cup of Nations</option>
+                        <option>Copa América</option>
+                        <option>AFC Asian Cup</option>
+                        <option>CONCACAF Gold Cup</option>
+                        <option>OFC Nations Cup</option>
+                    </select>
+                </label>
+                <label for="team-select">Your country
+                    <select id="team-select">
+                        <option value="Nigeria">🇳🇬 Nigeria</option><option value="Brazil">🇧🇷 Brazil</option>
+                        <option value="Argentina">🇦🇷 Argentina</option><option value="England">🏴 England</option>
+                        <option value="France">🇫🇷 France</option><option value="Germany">🇩🇪 Germany</option>
+                        <option value="Spain">🇪🇸 Spain</option><option value="Morocco">🇲🇦 Morocco</option>
+                        <option value="Ghana">🇬🇭 Ghana</option><option value="Japan">🇯🇵 Japan</option>
+                        <option value="United States">🇺🇸 United States</option><option value="Canada">🇨🇦 Canada</option>
+                        <option value="Australia">🇦🇺 Australia</option><option value="South Korea">🇰🇷 South Korea</option>
+                        <option value="Portugal">🇵🇹 Portugal</option><option value="Netherlands">🇳🇱 Netherlands</option>
+                    </select>
+                </label>
+                <label for="opponent-team-select">Opponent country
+                    <select id="opponent-team-select">
+                        <option value="Brazil">🇧🇷 Brazil</option><option value="Nigeria">🇳🇬 Nigeria</option>
+                        <option value="Argentina">🇦🇷 Argentina</option><option value="England">🏴 England</option>
+                        <option value="France">🇫🇷 France</option><option value="Germany">🇩🇪 Germany</option>
+                        <option value="Spain">🇪🇸 Spain</option><option value="Morocco">🇲🇦 Morocco</option>
+                        <option value="Ghana">🇬🇭 Ghana</option><option value="Japan">🇯🇵 Japan</option>
+                        <option value="United States">🇺🇸 United States</option><option value="Canada">🇨🇦 Canada</option>
+                        <option value="Australia">🇦🇺 Australia</option><option value="South Korea">🇰🇷 South Korea</option>
+                        <option value="Portugal">🇵🇹 Portugal</option><option value="Netherlands">🇳🇱 Netherlands</option>
+                    </select>
+                </label>
+                <button id="cup-enter-button" class="primary-button" type="button">Enter selected cup</button>
+                <p id="cup-match-status" class="cup-progress" role="status" aria-live="polite">Choose teams to begin your cup run.</p>
+                <h3>Earned trophies</h3>
+                <p>Win matches and score goals to earn free in-game trophies. No purchase is needed.</p>
+                <article class="cup-card">
+                    <h3>🏆 Unity Cup</h3>
+                    <p>Win one Exhibition match by scoring more goals than the computer.</p>
+                    <p id="unity-cup-progress" class="cup-progress">Exhibition wins: 0 / 1</p>
+                </article>
+                <article class="cup-card">
+                    <h3>🌟 Champions Cup</h3>
+                    <p>Keep winning: earn five Exhibition victories to lift the Champions Cup.</p>
+                    <p id="champions-cup-progress" class="cup-progress">Exhibition wins: 0 / 5</p>
+                </article>
+                <article class="cup-card">
+                    <h3>⚽ Golden Boot</h3>
+                    <p>Score ten goals across matches and training to claim the Golden Boot.</p>
+                    <p id="golden-boot-progress" class="cup-progress">Goals: 0 / 10</p>
+                </article>
+                <article class="cup-card">
+                    <h3>🌍 International Cup</h3>
+                    <p>Win four knockout fixtures with your selected country to win the selected cup.</p>
+                    <p id="international-cup-progress" class="cup-progress">Cup victories: 0</p>
+                </article>
+                <p>Swipe right from the left edge to open this panel; swipe left to close it.</p>
+            </aside>
+            <div class="home-content">
+                <div class="brand-mark" aria-hidden="true">⚽</div>
+                <p class="eyebrow">A quick-play football game</p>
+                <h1 id="game-title">VivaTech<br>Football</h1>
+                <p class="home-intro">Take control, find space, and score. Play a timed match against the computer or practise your shots.</p>
+                <div class="progress-row" aria-label="Player progress">
+                    <span class="progress-chip">🪙 <strong id="coin-balance">0</strong> coins</span>
+                    <span class="progress-chip">PRO <strong id="player-level">Rookie</strong></span>
+                </div>
+                <div class="game-profile">
+                    <label for="country-select">Stadium tour
+                        <select id="country-select">
+                            <option value="lagos">Lagos, Nigeria · Unity Arena</option>
+                            <option value="rio">Rio de Janeiro, Brazil · Maré Stadium</option>
+                            <option value="london">London, England · Crown Park</option>
+                            <option value="tokyo">Tokyo, Japan · Sakura Dome</option>
+                            <option value="marrakech">Marrakech, Morocco · Atlas Ground</option>
+                            <option value="munich">Munich, Germany · Alpine Arena</option>
+                            <option value="paris">Paris, France · Lumière Stadium</option>
+                            <option value="johannesburg">Johannesburg, South Africa · Highveld Park</option>
+                            <option value="sydney">Sydney, Australia · Harbour Ground</option>
+                            <option value="seoul">Seoul, South Korea · Han River Stadium</option>
+                        </select>
+                    </label>
+                    <label for="player-select">Your player
+                        <select id="player-select">
+                            <option value="Ayo Blaze">Ayo Blaze · Striker #9</option>
+                            <option value="Maya Swift">Maya Swift · Captain #10</option>
+                            <option value="Kofi Wall">Kofi Wall · Keeper #1</option>
+                            <option value="Zuri Flash">Zuri Flash · Winger #7</option>
+                            <option value="Tariq Stone">Tariq Stone · Defender #4</option>
+                            <option value="Lionel Messi">Lionel Messi · #10</option>
+                            <option value="Cristiano Ronaldo">Cristiano Ronaldo · #7</option>
+                            <option value="Kylian Mbappe">Kylian Mbappé · #10</option>
+                            <option value="Erling Haaland">Erling Haaland · #9</option>
+                            <option value="Mohamed Salah">Mohamed Salah · #11</option>
+                            <option value="Vinicius Junior">Vinícius Júnior · #7</option>
+                            <option value="Jude Bellingham">Jude Bellingham · #5</option>
+                            <option value="Alexia Putellas">Alexia Putellas · #11</option>
+                            <option value="Aitana Bonmati">Aitana Bonmatí · #14</option>
+                            <option value="Sam Kerr">Sam Kerr · #20</option>
+                            <option value="Marta">Marta · #10</option>
+                        </select>
+                    </label>
+                </div>
+                <p class="home-help">Player-name examples use generic original avatars, not official likenesses. International cups are four-match game tournaments.</p>
+                <div class="mode-list" aria-label="Choose a game mode">
+                    <button class="mode-button" type="button" data-mode="exhibition">
+                        <span class="mode-icon" aria-hidden="true">🏟️</span>
+                        <span class="mode-copy"><span class="mode-title">Exhibition match</span><span class="mode-description">Play a 90-second match against the computer.</span></span>
+                        <span class="mode-arrow" aria-hidden="true">›</span>
+                    </button>
+                    <button class="mode-button" type="button" data-mode="international">
+                        <span class="mode-icon" aria-hidden="true">🌍</span>
+                        <span class="mode-copy"><span class="mode-title">International cup</span><span class="mode-description">Choose a cup and national teams, then take your team onto the pitch.</span></span>
+                        <span class="mode-arrow" aria-hidden="true">›</span>
+                    </button>
+                    <button class="mode-button" type="button" data-mode="training">
+                        <span class="mode-icon" aria-hidden="true">🎯</span>
+                        <span class="mode-copy"><span class="mode-title">Training ground</span><span class="mode-description">Practise movement, passing, and shooting at your own pace.</span></span>
+                        <span class="mode-arrow" aria-hidden="true">›</span>
+                    </button>
+                </div>
+                <div class="home-actions">
+                    <button class="quiet-button" id="options-button" type="button">⚙ Options</button>
+                    <button class="quiet-button" id="help-button" type="button">? How to play</button>
+                    <button class="quiet-button" id="profile-button" type="button">Sign in / profile</button>
+                    <button class="quiet-button" id="premium-button" type="button">Premium mode · ₦2,000</button>
+                </div>
+                <p class="home-help" id="profile-status">Works on touch screens and with a keyboard. A profile is optional.</p>
+            </div>
+        </section>
+
+        <section id="match-screen" class="app-screen" aria-label="Football match">
+            <header class="match-header">
+                <div class="scoreboard" aria-label="Match score">
+                    <div class="team-home"><span class="team-label" id="team-name">VIVATECH</span><br><strong id="player-score">0</strong><span id="match-player-name" class="match-nameplate">Ayo Blaze</span></div>
+                    <span class="score-separator">–</span>
+                    <div class="team-away"><span class="team-label" id="opponent-name">COMPUTER</span><br><strong id="ai-score">0</strong></div>
+                </div>
+                <div class="match-center">
+                    <span id="match-clock">01:30</span>
+                    <span id="match-status" role="status" aria-live="polite">Ready for kick-off</span>
+                </div>
+                <div class="header-buttons">
+                    <button class="header-button primary" id="start-match-button" type="button">KICK OFF</button>
+                    <button class="header-button" id="menu-button" type="button">MENU</button>
+                </div>
+            </header>
+            <div id="stadium-banner" class="stadium-top" data-stadium="lagos" aria-hidden="true">🇳🇬 UNITY ARENA · LAGOS · ● ● ● ● ● ● ● ● ● ● ● ● ● ●</div>
+            <div id="canvas-wrapper">
+                <div id="commentary-status" role="status" aria-live="polite" hidden></div>
+                <canvas id="footballCanvas" role="img" aria-label="Landscape football pitch. Move your blue team toward the goal on the right."></canvas>
+            </div>
+            <footer class="controls" aria-label="Game controls">
+                <div class="direction-pad" aria-label="Move player">
+                    <button class="control-button" type="button" data-direction="up" aria-label="Move up">▲</button>
+                    <button class="control-button" type="button" data-direction="left" aria-label="Move left">◀</button>
+                    <button class="control-button" type="button" data-direction="down" aria-label="Move down">▼</button>
+                    <button class="control-button" type="button" data-direction="right" aria-label="Move right">▶</button>
+                </div>
+                <div class="action-controls">
+                    <button class="control-button" id="auto-play-button" type="button" aria-pressed="false">AUTO<br><small>OFF</small></button>
+                    <button class="control-button" id="pass-button" type="button" aria-label="Pass the ball">PASS<br><small>X</small></button>
+                    <button class="control-button" id="kick-button" type="button" aria-label="Kick the ball">KICK<br><small>C</small></button>
+                    <button class="control-button" id="shoot-button" type="button" aria-label="Shoot at goal">SHOOT<br><small>SPACE</small></button>
+                </div>
+                <div class="keyboard-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move<br><kbd>X</kbd> Pass · <kbd>C</kbd> Kick · <kbd>Space</kbd> Shoot<br>Auto button: computer plays your player</div>
+            </footer>
+        </section>
+
+        <div class="overlay" id="options-overlay" hidden>
+            <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="options-title">
+                <h2 id="options-title">Game options</h2>
+                <p>Choose how challenging the computer opponent should be, and set the game audio.</p>
+                <label for="difficulty-select">Opponent difficulty</label>
+                <select id="difficulty-select">
+                    <option value="easy">Easy</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="hard">Hard</option>
+                </select>
+                <label>Audio</label>
+                <div class="audio-options">
+                    <label class="audio-toggle"><input id="music-toggle" type="checkbox"> Original generated background music</label>
+                    <label class="audio-toggle"><input id="sound-toggle" type="checkbox" checked> Game sound effects</label>
+                    <label class="audio-toggle"><input id="crowd-toggle" type="checkbox" checked> Generated crowd cheers</label>
+                    <label class="audio-toggle"><input id="commentator-toggle" type="checkbox" checked> Match commentator</label>
+                    <label for="custom-music-file">Add music from your device (MP3, WAV, OGG)
+                        <input id="custom-music-file" type="file" accept="audio/*">
+                    </label>
+                    <audio id="custom-music-player" class="hidden" controls loop preload="none" aria-label="Your selected music"></audio>
+                    <div>
+                        <p class="small-note">Listen on Audiomack (opens the artist's page; music playback is provided by Audiomack):</p>
+                        <p class="small-note"><a href="https://audiomack.com/violet-vfx/song/titanium" target="_blank" rel="noopener noreferrer">Open “Titanium” on Audiomack</a></p>
+                        <p class="small-note"><a href="https://audiomack.com/imaginedragons/song/enemy-from-the-series-arcane-league-of-legends" target="_blank" rel="noopener noreferrer">Open “Enemy” on Audiomack</a></p>
+                    </div>
+                </div>
+                <p id="audio-status" role="status" aria-live="polite">Generated music is optional. Audiomack links open the supplied tracks on Audiomack; the game does not copy or stream them.</p>
+                <div class="dialog-actions"><button class="quiet-button close-overlay" type="button">Done</button></div>
+            </section>
+        </div>
+        <div class="overlay" id="profile-overlay" hidden>
+            <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+                <h2 id="profile-title">Your profile</h2>
+                <p>This is a local demo profile. It does not create a real account, verify your email, save your details, or send them anywhere.</p>
+                <form id="profile-form">
+                    <label for="profile-username">Username</label>
+                    <input id="profile-username" name="username" type="text" autocomplete="nickname" maxlength="32" required>
+                    <label for="profile-email">Email</label>
+                    <input id="profile-email" name="email" type="email" autocomplete="email" required>
+                    <div class="dialog-actions">
+                        <button class="quiet-button close-overlay" type="button">Cancel</button>
+                        <button class="header-button primary" type="submit">Continue with email (demo)</button>
+                    </div>
+                </form>
+                <div class="dialog-actions">
+                    <button id="google-sign-in-button" class="quiet-button" type="button">Set up Google sign-in</button>
+                </div>
+                <p id="profile-message" class="small-note" role="status" aria-live="polite">Google sign-in is not connected yet. This local demo has no Firebase project configuration.</p>
+                <div id="google-setup-help" class="small-note hidden">
+                    <p>To connect it: create a Firebase project, add a Web app, enable Google under Authentication → Sign-in method, and add your hosted site (or localhost) under Authorized domains. Then configure the Firebase Web app settings and connect the Firebase Authentication SDK. This page opened as a <code>file://</code> URL cannot complete Google OAuth.</p>
+                    <p><a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer">Open Firebase Console</a></p>
+                </div>
+            </section>
+        </div>
+        <div class="overlay" id="premium-overlay" hidden>
+            <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="premium-title">
+                <h2 id="premium-title">Premium mode</h2>
+                <p>This is a checkout preview for a future premium mode. Premium content and real payment processing are not connected, and this demo will not charge you.</p>
+                <form id="checkout-form" novalidate>
+                    <div class="price-row">
+                        <label for="currency-select">Currency
+                            <select id="currency-select" name="currency">
+                                <option value="NGN">NGN — Nigerian naira</option>
+                                <option value="USD">USD — US dollar</option>
+                                <option value="GBP">GBP — British pound</option>
+                                <option value="EUR">EUR — euro</option>
+                                <option value="GHS">GHS — Ghanaian cedi</option>
+                                <option value="KES">KES — Kenyan shilling</option>
+                                <option value="ZAR">ZAR — South African rand</option>
+                                <option value="INR">INR — Indian rupee</option>
+                                <option value="CAD">CAD — Canadian dollar</option>
+                                <option value="AUD">AUD — Australian dollar</option>
+                            </select>
+                        </label>
+                        <label for="price-amount">Display amount
+                            <input id="price-amount" name="amount" type="number" min="0.01" step="0.01" value="2000" required>
+                        </label>
+                    </div>
+                    <p id="currency-note" class="small-note">Base demo price: ₦2,000 NGN. Currency conversion is not configured.</p>
+                    <label>Choose a payment method (preview)</label>
+                    <div class="payment-methods" role="radiogroup" aria-label="Payment method preview">
+                        <label class="payment-option"><input type="radio" name="payment-method" value="Verve" checked> Verve</label>
+                        <label class="payment-option"><input type="radio" name="payment-method" value="Google Pay"> Google Pay</label>
+                        <label class="payment-option"><input type="radio" name="payment-method" value="Visa"> Visa</label>
+                        <label class="payment-option"><input type="radio" name="payment-method" value="Mastercard"> Mastercard</label>
+                        <label class="payment-option"><input type="radio" name="payment-method" value="PayPal"> PayPal</label>
+                        <label class="payment-option"><input type="radio" name="payment-method" value="Bank transfer"> Bank transfer</label>
+                    </div>
+                    <div class="dialog-actions">
+                        <button class="quiet-button close-overlay" type="button">Cancel</button>
+                        <button class="header-button primary" type="submit">Show checkout preview</button>
+                    </div>
+                </form>
+                <section id="card-preview" class="hidden" aria-labelledby="card-preview-title">
+                    <h3 id="card-preview-title">Card details preview</h3>
+                    <p class="small-note">Example only—these fields are disabled. Never enter real card details in this game demo.</p>
+                    <div class="card-preview-grid">
+                        <label class="card-number-label" for="demo-card-number">Card number
+                            <input id="demo-card-number" type="text" value="•••• •••• •••• ••••" disabled>
+                        </label>
+                        <label for="demo-cardholder">Name on card
+                            <input id="demo-cardholder" type="text" value="Cardholder name" disabled>
+                        </label>
+                        <label for="demo-card-expiry">Expiry date
+                            <input id="demo-card-expiry" type="text" value="MM / YY" disabled>
+                        </label>
+                        <label for="demo-card-security">Security code
+                            <input id="demo-card-security" type="text" value="•••" disabled>
+                        </label>
+                    </div>
+                </section>
+                <p id="checkout-message" class="small-note" role="status" aria-live="polite">Payment choices are previews only; don't enter card or bank details.</p>
+            </section>
+        </div>
+        <div class="overlay" id="help-overlay" hidden>
+            <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="help-title">
+                <h2 id="help-title">How to play</h2>
+                <p>Move your blue player with the on-screen arrows or <strong>W A S D</strong>. Get close to the ball, then press <strong>SHOOT</strong> (Space) to aim for the top goal. Use <strong>PASS</strong> (X) for a shorter kick. The red computer player defends and tries to score at the bottom goal.</p>
+                <p>Use <strong>KICK</strong> (C) for a firm forward touch. Choose a stadium and a fictional player from the main menu. Score goals to earn coins and build your free Pro level. Training goals earn smaller coin rewards.</p>
+                <p>In Training Ground, the opponent stays out of the way and the clock is turned off. Pause or return to the main menu whenever you like.</p>
+                <div class="dialog-actions"><button class="quiet-button close-overlay" type="button">Got it</button></div>
+            </section>
+        </div>
+        <div class="overlay" id="pause-overlay" hidden>
+            <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+                <h2 id="pause-title">Match paused</h2>
+                <p>Take a breather. Your score and match time are saved.</p>
+                <div class="dialog-actions">
+                    <button class="quiet-button" id="pause-menu-button" type="button">Main menu</button>
+                    <button class="header-button primary" id="resume-button" type="button">Resume match</button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const canvas = document.querySelector("#footballCanvas");
+        const ctx = canvas.getContext("2d");
+        const wrapper = document.querySelector("#canvas-wrapper");
+        const homeScreen = document.querySelector("#home-screen");
+        const matchScreen = document.querySelector("#match-screen");
+        const playerScoreElement = document.querySelector("#player-score");
+        const aiScoreElement = document.querySelector("#ai-score");
+        const clockElement = document.querySelector("#match-clock");
+        const statusElement = document.querySelector("#match-status");
+        const startButton = document.querySelector("#start-match-button");
+        const autoPlayButton = document.querySelector("#auto-play-button");
+        const loadingScreen = document.querySelector("#loading-screen");
+        const loadingMessage = document.querySelector("#loading-message");
+        const musicToggle = document.querySelector("#music-toggle");
+        const soundToggle = document.querySelector("#sound-toggle");
+        const crowdToggle = document.querySelector("#crowd-toggle");
+        const commentatorToggle = document.querySelector("#commentator-toggle");
+        const audioStatus = document.querySelector("#audio-status");
+        const customMusicInput = document.querySelector("#custom-music-file");
+        const customMusicPlayer = document.querySelector("#custom-music-player");
+        const commentaryStatus = document.querySelector("#commentary-status");
+        const countrySelect = document.querySelector("#country-select");
+        const playerSelect = document.querySelector("#player-select");
+        const cupSelect = document.querySelector("#cup-select");
+        const teamSelect = document.querySelector("#team-select");
+        const opponentTeamSelect = document.querySelector("#opponent-team-select");
+        const stadiumBanner = document.querySelector("#stadium-banner");
+        const coinBalanceElement = document.querySelector("#coin-balance");
+        const playerLevelElement = document.querySelector("#player-level");
+        const cupDrawer = document.querySelector("#cup-drawer");
+        const cupMenuButton = document.querySelector("#cup-menu-button");
+        const profileOverlay = document.querySelector("#profile-overlay");
+        const premiumOverlay = document.querySelector("#premium-overlay");
+        const controls = { up: false, down: false, left: false, right: false };
+        const player = { x: 0, y: 0, radius: 15, speed: 210, vx: 0, vy: 0 };
+        const opponent = { x: 0, y: 0, radius: 15, speed: 115, vx: 0, vy: 0 };
+        const teamFormation = [
+            [0.13, 0.22], [0.13, 0.5], [0.13, 0.78],
+            [0.27, 0.16], [0.27, 0.39], [0.27, 0.61], [0.27, 0.84],
+            [0.43, 0.27], [0.43, 0.5], [0.43, 0.73]
+        ];
+        const teammates = teamFormation.map(([x, y], index) => ({ x: 0, y: 0, radius: 9, speed: 105, vx: 0, vy: 0, formationX: x, formationY: y, number: String(index + 2), kickCooldown: 0 }));
+        const rivalPlayers = teamFormation.map(([x, y], index) => ({ x: 0, y: 0, radius: 9, speed: 100, vx: 0, vy: 0, formationX: 1 - x, formationY: y, number: String(index + 2), kickCooldown: 0 }));
+        const ball = { x: 0, y: 0, radius: 7, vx: 0, vy: 0 };
+        const score = { player: 0, opponent: 0 };
+        const difficultySpeeds = { easy: 78, normal: 115, hard: 155 };
+        const stadiums = {
+            lagos: { country: "Lagos, Nigeria", name: "Unity Arena", flag: "🇳🇬", grass: "#247849", lightGrass: "#31905a", crowd: "#b89d3c" },
+            rio: { country: "Rio de Janeiro, Brazil", name: "Maré Stadium", flag: "🇧🇷", grass: "#237647", lightGrass: "#3e9c52", crowd: "#e8c33e" },
+            london: { country: "London, England", name: "Crown Park", flag: "🏴", grass: "#276d48", lightGrass: "#37865a", crowd: "#a9c7e8" },
+            tokyo: { country: "Tokyo, Japan", name: "Sakura Dome", flag: "🇯🇵", grass: "#286f49", lightGrass: "#43905b", crowd: "#e7829b" },
+            marrakech: { country: "Marrakech, Morocco", name: "Atlas Ground", flag: "🇲🇦", grass: "#78633a", lightGrass: "#947743", crowd: "#e6bc80" },
+            munich: { country: "Munich, Germany", name: "Alpine Arena", flag: "🇩🇪", grass: "#24754b", lightGrass: "#348d5b", crowd: "#d5d9e1" },
+            paris: { country: "Paris, France", name: "Lumière Stadium", flag: "🇫🇷", grass: "#246a49", lightGrass: "#398354", crowd: "#aac8e5" },
+            johannesburg: { country: "Johannesburg, South Africa", name: "Highveld Park", flag: "🇿🇦", grass: "#27734d", lightGrass: "#4a934d", crowd: "#e3c64d" },
+            sydney: { country: "Sydney, Australia", name: "Harbour Ground", flag: "🇦🇺", grass: "#27744c", lightGrass: "#36935c", crowd: "#c8d2e7" },
+            seoul: { country: "Seoul, South Korea", name: "Han River Stadium", flag: "🇰🇷", grass: "#25734d", lightGrass: "#3a9257", crowd: "#d4dce8" }
+        };
+        const playerNumbers = {
+            "Ayo Blaze": "9", "Maya Swift": "10", "Kofi Wall": "1", "Zuri Flash": "7", "Tariq Stone": "4",
+            "Lionel Messi": "10", "Cristiano Ronaldo": "7", "Kylian Mbappe": "10", "Erling Haaland": "9",
+            "Mohamed Salah": "11", "Vinicius Junior": "7", "Jude Bellingham": "5", "Alexia Putellas": "11",
+            "Aitana Bonmati": "14", "Sam Kerr": "20", Marta: "10"
+        };
+        const avatarSkinTones = ["#a96f49", "#d99d72", "#80543d", "#e5b08b", "#c98760", "#f0bf99", "#aa704e", "#d99b79"];
+        let coins = 0;
+        let internationalCupsWon = 0;
+        let tournamentRound = 1;
+        const tournamentRounds = ["Round 1", "Quarter-final", "Semi-final", "Final"];
+        let exhibitionWins = 0;
+        let goalsScored = 0;
+        let mode = "exhibition";
+        let playing = false;
+        let matchStarted = false;
+        let matchFinished = false;
+        let matchRewarded = false;
+        let autoPlay = false;
+        let matchSeconds = 90;
+        let messageSeconds = 0;
+        let kickCooldown = 0;
+        let opponentKickCooldown = 0;
+        let previousFrame = 0;
+        let pitchWidth = 0;
+        let pitchHeight = 0;
+        let audioContext = null;
+        let musicTimer = null;
+        let musicStep = 0;
+        let audioUnavailable = false;
+        let customMusicUrl = "";
+
+        try {
+            const savedCoins = Number(window.localStorage.getItem("vivatech-football-coins"));
+            if (Number.isSafeInteger(savedCoins) && savedCoins >= 0) coins = savedCoins;
+            const savedRecords = JSON.parse(window.localStorage.getItem("vivatech-football-records") || "{}");
+            if (Number.isSafeInteger(savedRecords.exhibitionWins) && savedRecords.exhibitionWins >= 0) exhibitionWins = savedRecords.exhibitionWins;
+            if (Number.isSafeInteger(savedRecords.goalsScored) && savedRecords.goalsScored >= 0) goalsScored = savedRecords.goalsScored;
+            if (Number.isSafeInteger(savedRecords.internationalCupsWon) && savedRecords.internationalCupsWon >= 0) internationalCupsWon = savedRecords.internationalCupsWon;
+        } catch (error) {
+            document.querySelector("#profile-status").textContent = "Progress cannot be saved in this browser; you can still play.";
+        }
+        updateProgress();
+
+        function updateProgress() {
+            coinBalanceElement.textContent = coins.toLocaleString();
+            playerLevelElement.textContent = coins >= 1000 ? "Pro" : coins >= 500 ? "All-Star" : coins >= 150 ? "Rising Star" : "Rookie";
+            document.querySelector("#unity-cup-progress").textContent = exhibitionWins >= 1 ? "UNLOCKED · Unity Cup won!" : `Exhibition wins: ${exhibitionWins} / 1`;
+            document.querySelector("#champions-cup-progress").textContent = exhibitionWins >= 5 ? "UNLOCKED · Champions Cup won!" : `Exhibition wins: ${exhibitionWins} / 5`;
+            document.querySelector("#golden-boot-progress").textContent = goalsScored >= 10 ? "UNLOCKED · Golden Boot won!" : `Goals: ${goalsScored} / 10`;
+            document.querySelector("#international-cup-progress").textContent = `Cup victories: ${internationalCupsWon}`;
+        }
+
+        function saveProgress() {
+            try {
+                window.localStorage.setItem("vivatech-football-coins", String(coins));
+                window.localStorage.setItem("vivatech-football-records", JSON.stringify({ exhibitionWins, goalsScored, internationalCupsWon }));
+            } catch (error) {
+                document.querySelector("#profile-status").textContent = "Progress updated for this session, but browser storage is unavailable.";
+            }
+        }
+
+        function awardCoins(amount, reason, shouldAnnounce = true) {
+            coins += amount;
+            updateProgress();
+            saveProgress();
+            if (shouldAnnounce) announce(`${reason} +${amount} coins!`);
+        }
+
+        function announce(message, emotion = "excited") {
+            commentaryStatus.textContent = message;
+            commentaryStatus.hidden = false;
+            window.clearTimeout(announce.timeoutId);
+            announce.timeoutId = window.setTimeout(() => { commentaryStatus.hidden = true; }, 3600);
+            if (commentatorToggle.checked && "speechSynthesis" in window) {
+                window.speechSynthesis.cancel();
+                const line = new SpeechSynthesisUtterance(message);
+                const delivery = {
+                    excited: { rate: 1.22, pitch: 1.42, volume: 1 },
+                    dramatic: { rate: 0.84, pitch: 0.78, volume: 0.98 },
+                    warm: { rate: 1.04, pitch: 1.16, volume: 0.86 },
+                    urgent: { rate: 1.34, pitch: 1.28, volume: 1 }
+                }[emotion] || { rate: 1.12, pitch: 1.2, volume: 0.94 };
+                line.rate = delivery.rate;
+                line.pitch = delivery.pitch;
+                line.volume = delivery.volume;
+                const englishVoice = window.speechSynthesis.getVoices().find(voice => voice.lang.toLowerCase().startsWith("en"));
+                if (englishVoice) line.voice = englishVoice;
+                window.speechSynthesis.speak(line);
+            }
+        }
+
+        function updateStadium() {
+            const stadium = stadiums[countrySelect.value];
+            stadiumBanner.dataset.stadium = countrySelect.value;
+            stadiumBanner.textContent = `${stadium.flag} ${stadium.name.toUpperCase()} · ${stadium.country.toUpperCase()} · ● ● ● ● ● ● ● ● ● ● ● ● ●`;
+            document.querySelector("#match-player-name").textContent = playerSelect.value;
+            drawPitch();
+        }
+
+        function setCupDrawerOpen(isOpen) {
+            cupDrawer.classList.toggle("open", isOpen);
+            cupDrawer.setAttribute("aria-hidden", String(!isOpen));
+            cupMenuButton.setAttribute("aria-expanded", String(isOpen));
+        }
+
+        function startSelectedMode(selectedMode) {
+            if (selectedMode === "international" && teamSelect.value === opponentTeamSelect.value) {
+                document.querySelector("#cup-match-status").textContent = "Choose two different countries before starting a cup fixture.";
+                setCupDrawerOpen(true);
+                return;
+            }
+            setCupDrawerOpen(false);
+            showLoading(selectedMode === "international" ? `Preparing ${cupSelect.value}…` : "Preparing your match…", 550, () => enterMatch(selectedMode));
+        }
+
+        function showLoading(message, duration, onComplete) {
+            loadingMessage.textContent = message;
+            loadingScreen.hidden = false;
+            window.setTimeout(() => {
+                loadingScreen.hidden = true;
+                if (onComplete) onComplete();
+            }, duration);
+        }
+
+        function getAudioContext() {
+            if (audioUnavailable) return null;
+            if (audioContext) {
+                if (audioContext.state === "suspended") audioContext.resume();
+                return audioContext;
+            }
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) {
+                audioUnavailable = true;
+                audioStatus.textContent = "This browser does not support game audio.";
+                return null;
+            }
+            audioContext = new AudioContextClass();
+            audioStatus.textContent = "Game audio is ready.";
+            return audioContext;
+        }
+
+        function playTone(frequency, duration, volume, type = "sine", endFrequency = frequency) {
+            const context = getAudioContext();
+            if (!context) return;
+            const now = context.currentTime;
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, now);
+            oscillator.frequency.linearRampToValueAtTime(endFrequency, now + duration);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.linearRampToValueAtTime(volume, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start(now);
+            oscillator.stop(now + duration + 0.02);
+        }
+
+        function playEffect(effect) {
+            if (!soundToggle.checked) return;
+            if (effect === "goal") {
+                playTone(523, 0.2, 0.08);
+                window.setTimeout(() => playTone(659, 0.28, 0.08), 130);
+            } else {
+                playTone(effect === "shot" ? 170 : 120, 0.12, 0.07, "triangle", 55);
+            }
+        }
+
+        function playCrowdCheer() {
+            const context = getAudioContext();
+            if (!crowdToggle.checked || !context) return;
+            const duration = 1.6;
+            const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
+            const samples = buffer.getChannelData(0);
+            for (let index = 0; index < samples.length; index += 1) {
+                samples[index] = (Math.random() * 2 - 1) * 0.45;
+            }
+            const source = context.createBufferSource();
+            const filter = context.createBiquadFilter();
+            const gain = context.createGain();
+            source.buffer = buffer;
+            filter.type = "bandpass";
+            filter.Q.value = 0.7;
+            filter.frequency.setValueAtTime(480, context.currentTime);
+            filter.frequency.linearRampToValueAtTime(1050, context.currentTime + 0.55);
+            filter.frequency.linearRampToValueAtTime(620, context.currentTime + duration);
+            gain.gain.setValueAtTime(0.0001, context.currentTime);
+            gain.gain.linearRampToValueAtTime(0.16, context.currentTime + 0.28);
+            gain.gain.setValueAtTime(0.16, context.currentTime + 0.65);
+            gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + duration);
+            source.connect(filter);
+            filter.connect(gain);
+            gain.connect(context.destination);
+            source.start();
+            source.stop(context.currentTime + duration);
+        }
+
+        function stopBackgroundMusic() {
+            if (musicTimer !== null) {
+                window.clearInterval(musicTimer);
+                musicTimer = null;
+            }
+        }
+
+        function startBackgroundMusic() {
+            if (!musicToggle.checked || customMusicPlayer.src || musicTimer !== null) return;
+            if (!getAudioContext()) return;
+            const melody = [523, 659, 784, 659, 587, 698, 880, 698];
+            const bass = [131, 165, 196, 165];
+            musicTimer = window.setInterval(() => {
+                if (!musicToggle.checked || !matchScreen.classList.contains("active") && !homeScreen.classList.contains("active")) {
+                    stopBackgroundMusic();
+                    return;
+                }
+                const index = musicStep % melody.length;
+                playTone(melody[index], 0.24, 0.026, "triangle");
+                if (index % 2 === 0) playTone(bass[(musicStep >> 1) % bass.length], 0.3, 0.018, "sine");
+                musicStep += 1;
+            }, 300);
+        }
+
+        function primeAudio() {
+            if (!audioContext) getAudioContext();
+            if (musicToggle.checked) startBackgroundMusic();
+        }
+
+        function showScreen(screen) {
+            homeScreen.classList.toggle("active", screen === homeScreen);
+            matchScreen.classList.toggle("active", screen === matchScreen);
+            if (musicToggle.checked) startBackgroundMusic();
+        }
+
+        function fitCanvas() {
+            const bounds = wrapper.getBoundingClientRect();
+            if (!bounds.width || !bounds.height) return;
+            const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+            pitchWidth = bounds.width;
+            pitchHeight = bounds.height;
+            canvas.width = Math.round(pitchWidth * pixelRatio);
+            canvas.height = Math.round(pitchHeight * pixelRatio);
+            ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+            player.x = clamp(player.x || pitchWidth * 0.22, 24, pitchWidth - 24);
+            player.y = clamp(player.y || pitchHeight * 0.5, 22, pitchHeight - 22);
+            opponent.x = clamp(opponent.x || pitchWidth * 0.78, 24, pitchWidth - 24);
+            opponent.y = clamp(opponent.y || pitchHeight * 0.5, 22, pitchHeight - 22);
+            ball.x = clamp(ball.x || pitchWidth * 0.5, 10, pitchWidth - 10);
+            ball.y = clamp(ball.y || pitchHeight * 0.52, 15, pitchHeight - 15);
+            drawPitch();
+        }
+
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(max, value));
+        }
+
+        function resetPositions() {
+            player.x = pitchWidth * 0.22;
+            player.y = pitchHeight * 0.5;
+            opponent.x = pitchWidth * 0.78;
+            opponent.y = pitchHeight * 0.5;
+            teammates.forEach(teammate => {
+                teammate.x = pitchWidth * teammate.formationX;
+                teammate.y = pitchHeight * teammate.formationY;
+                teammate.vx = teammate.vy = 0;
+            });
+            rivalPlayers.forEach(rival => {
+                rival.x = pitchWidth * rival.formationX;
+                rival.y = pitchHeight * rival.formationY;
+                rival.vx = rival.vy = 0;
+            });
+            ball.x = pitchWidth * 0.5;
+            ball.y = pitchHeight * 0.52;
+            player.vx = player.vy = opponent.vx = opponent.vy = ball.vx = ball.vy = 0;
+            kickCooldown = opponentKickCooldown = 0;
+        }
+
+        function updateScore() {
+            playerScoreElement.textContent = score.player;
+            aiScoreElement.textContent = score.opponent;
+        }
+
+        function formatTime(seconds) {
+            const total = Math.max(0, Math.ceil(seconds));
+            return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+        }
+
+        function enterMatch(selectedMode) {
+            mode = selectedMode;
+            playing = false;
+            matchStarted = false;
+            matchFinished = false;
+            matchRewarded = false;
+            if (mode === "international") tournamentRound = 1;
+            matchSeconds = 90;
+            score.player = 0;
+            score.opponent = 0;
+            document.querySelector("#team-name").textContent = mode === "international" ? teamSelect.value.toUpperCase() : "VIVATECH";
+            document.querySelector("#opponent-name").textContent = mode === "training" ? "TRAINING" : mode === "international" ? opponentTeamSelect.value.toUpperCase() : "COMPUTER";
+            document.querySelector("#match-clock").textContent = mode === "training" ? "∞" : formatTime(matchSeconds);
+            statusElement.textContent = mode === "training" ? "Training ready" : mode === "international" ? `${cupSelect.value} · ${tournamentRounds[tournamentRound - 1]}` : "Ready for kick-off";
+            startButton.textContent = mode === "training" ? "START TRAINING" : "KICK OFF";
+            if (mode === "international") {
+                document.querySelector("#cup-match-status").textContent = `${cupSelect.value}: ${teamSelect.value} vs ${opponentTeamSelect.value} · four-round game cup.`;
+            }
+            updateScore();
+            showScreen(matchScreen);
+            updateStadium();
+            fitCanvas();
+            resetPositions();
+            drawPitch();
+        }
+
+        function startOrPauseMatch() {
+            if (matchFinished) {
+                if (mode === "international") {
+                    if (score.player > score.opponent && tournamentRound < tournamentRounds.length) {
+                        tournamentRound += 1;
+                        const opponents = [...opponentTeamSelect.options].map(option => option.value).filter(country => country !== teamSelect.value);
+                        const currentIndex = opponents.indexOf(opponentTeamSelect.value);
+                        opponentTeamSelect.value = opponents[(currentIndex + 1) % opponents.length];
+                        document.querySelector("#opponent-name").textContent = opponentTeamSelect.value.toUpperCase();
+                        statusElement.textContent = `${cupSelect.value} · ${tournamentRounds[tournamentRound - 1]}`;
+                    } else if (score.player > score.opponent && tournamentRound === tournamentRounds.length) {
+                        tournamentRound = 1;
+                        document.querySelector("#cup-match-status").textContent = `Cup champion! ${teamSelect.value} won the ${cupSelect.value}. Choose Enter selected cup to play again.`;
+                        mode = "exhibition";
+                        returnToMenu();
+                        return;
+                    } else if (score.player <= score.opponent && score.player !== score.opponent) {
+                        document.querySelector("#cup-match-status").textContent = `${teamSelect.value} were knocked out of the ${cupSelect.value}. Choose Enter selected cup to try again.`;
+                        mode = "exhibition";
+                        returnToMenu();
+                        return;
+                    } else {
+                        statusElement.textContent = `Replay the tied ${tournamentRounds[tournamentRound - 1]}`;
+                    }
+                }
+                matchSeconds = 90;
+                score.player = 0;
+                score.opponent = 0;
+                matchFinished = false;
+                matchRewarded = false;
+                updateScore();
+                resetPositions();
+            }
+            playing = !playing;
+            if (playing) {
+                matchStarted = true;
+                statusElement.textContent = mode === "training" ? "Training in progress" : "Match in progress";
+                startButton.textContent = "PAUSE";
+                document.querySelector("#pause-overlay").hidden = true;
+                announce(mode === "international"
+                    ? `We're underway in the ${cupSelect.value}! ${teamSelect.value} against ${opponentTeamSelect.value}!`
+                    : `And we're underway at ${stadiums[countrySelect.value].name}!`, "excited");
+                playCrowdCheer();
+            } else if (matchStarted) {
+                statusElement.textContent = "Paused";
+                startButton.textContent = "RESUME";
+                document.querySelector("#pause-overlay").hidden = false;
+            }
+        }
+
+        function pauseMatch() {
+            if (!matchStarted || !playing) return;
+            playing = false;
+            statusElement.textContent = "Paused";
+            startButton.textContent = "RESUME";
+            document.querySelector("#pause-overlay").hidden = false;
+        }
+
+        function returnToMenu() {
+            playing = false;
+            matchStarted = false;
+            clearControls();
+            document.querySelector("#pause-overlay").hidden = true;
+            showScreen(homeScreen);
+        }
+
+        function setStatus(message, duration = 1.4) {
+            statusElement.textContent = message;
+            messageSeconds = duration;
+        }
+
+        function kickBall(power, forward, message) {
+            if (!playing) {
+                setStatus("Start the match to play", 1);
+                return;
+            }
+            const distance = Math.hypot(ball.x - player.x, ball.y - player.y);
+            if (distance > player.radius + ball.radius + 47) {
+                setStatus("Move closer to the ball", 1);
+                return;
+            }
+            let target = null;
+            if (message === "Pass!") {
+                target = teammates
+                    .filter(teammate => teammate.x > player.x + 14)
+                    .sort((first, second) => distanceTo(player, first) - distanceTo(player, second))[0];
+            }
+            let dx = target ? target.x - ball.x : forward ? pitchWidth - ball.x : player.x - ball.x;
+            let dy = target ? target.y - ball.y : pitchHeight * 0.5 - ball.y;
+            if (!forward && Math.abs(dy) < 8) dy = 1;
+            const length = Math.hypot(dx, dy) || 1;
+            ball.vx = (dx / length) * power + player.vx * 0.3;
+            ball.vy = (dy / length) * power + player.vy * 0.3;
+            kickCooldown = 0.22;
+            playEffect(message === "Shot!" ? "shot" : message === "Kick!" ? "kick" : "pass");
+            setStatus(message, 0.8);
+            if (message !== "AUTO") {
+                const calls = message === "Shot!"
+                    ? [`${playerSelect.value} has a sight of goal... THEY STRIKE IT!`, `The shot is on! ${playerSelect.value} lets fly!`, `Here comes ${playerSelect.value}... what a hit!`]
+                    : message === "Kick!"
+                        ? [`${playerSelect.value} thunders it upfield!`, `A powerful drive forward from ${playerSelect.value}!`]
+                        : [`Lovely vision! ${playerSelect.value} slides a pass into space!`, `A clever pass opens the field right up!`];
+                announce(calls[Math.floor(Math.random() * calls.length)], message === "Shot!" ? "urgent" : "warm");
+            }
+        }
+
+        function scoreGoal(forPlayer) {
+            playCrowdCheer();
+            if (forPlayer) playEffect("goal");
+            if (forPlayer) score.player += 1;
+            else score.opponent += 1;
+            updateScore();
+            const goalCall = forPlayer ? `GOAL! ${playerSelect.value} finds the net!` : "The computer scores!";
+            setStatus(goalCall, 2.4);
+            const goalCalls = forPlayer
+                ? [`GOOOOOAL! ${playerSelect.value} has smashed it home! What a finish!`, `It's in! ${playerSelect.value} lights up the stadium!`, `Unbelievable scenes! ${playerSelect.value} finds the net!`]
+                : ["The opponent finds the net! The crowd falls quiet for a moment.", "A sharp finish from the opposition. Your team has work to do!"];
+            announce(goalCalls[Math.floor(Math.random() * goalCalls.length)], forPlayer ? "excited" : "dramatic");
+            if (forPlayer) {
+                goalsScored += 1;
+                updateProgress();
+                saveProgress();
+                awardCoins(mode === "training" ? 10 : 25, "Goal scored", false);
+            }
+            resetPositions();
+            messageSeconds = 2.4;
+        }
+
+        function updateGame(delta) {
+            if (!playing || pitchWidth < 1 || pitchHeight < 1) return;
+            if (messageSeconds > 0) {
+                messageSeconds -= delta;
+                if (messageSeconds <= 0) statusElement.textContent = mode === "training" ? "Training in progress" : "Match in progress";
+            }
+            if (mode !== "training") {
+                matchSeconds = Math.max(0, matchSeconds - delta);
+                clockElement.textContent = formatTime(matchSeconds);
+                if (matchSeconds <= 0) {
+                    playing = false;
+                    matchFinished = true;
+                    startButton.textContent = "PLAY AGAIN";
+                    statusElement.textContent = "Full time";
+                    if (!matchRewarded) {
+                        if (mode === "international") {
+                            if (score.player > score.opponent && tournamentRound < tournamentRounds.length) {
+                                startButton.textContent = "NEXT ROUND";
+                                document.querySelector("#cup-match-status").textContent = `${teamSelect.value} advance to ${tournamentRounds[tournamentRound]}. Tap Next Round to continue.`;
+                                awardCoins(50, "Cup match won!");
+                            } else if (score.player > score.opponent) {
+                                startButton.textContent = "RETURN TO MENU";
+                                internationalCupsWon += 1;
+                                updateProgress();
+                                saveProgress();
+                                document.querySelector("#cup-match-status").textContent = `Champions! ${teamSelect.value} have won the ${cupSelect.value}!`;
+                                awardCoins(200, "International cup won!");
+                            } else if (score.player === score.opponent) {
+                                startButton.textContent = "REPLAY FIXTURE";
+                                document.querySelector("#cup-match-status").textContent = `The fixture is tied. Replay ${tournamentRounds[tournamentRound - 1]} to decide who advances.`;
+                            } else {
+                                startButton.textContent = "CUP RUN OVER";
+                                document.querySelector("#cup-match-status").textContent = `${teamSelect.value} were eliminated. Return to the menu to start another cup.`;
+                            }
+                            matchRewarded = true;
+                            announce(score.player > score.opponent ? "They've done it! Your team wins the tie and marches on!" : score.player === score.opponent ? "It's all square! We go again in a replay!" : "A tough result. The cup run ends here.", score.player > score.opponent ? "excited" : "dramatic");
+                            return;
+                        }
+                        if (score.player > score.opponent) {
+                            if (mode === "exhibition") exhibitionWins += 1;
+                            updateProgress();
+                            saveProgress();
+                            awardCoins(50, "Match won!");
+                        }
+                        else if (score.player === score.opponent) awardCoins(15, "Draw bonus!");
+                        matchRewarded = true;
+                    }
+                    announce(score.player > score.opponent ? "Full time! A brilliant win for your team!" : score.player === score.opponent ? "Full time! A hard-fought draw!" : "Full time! Keep training and come back stronger!", score.player >= score.opponent ? "excited" : "warm");
+                    return;
+                }
+            }
+
+            updateAutoPlay();
+            const horizontal = Number(controls.right) - Number(controls.left);
+            const vertical = Number(controls.down) - Number(controls.up);
+            const magnitude = Math.hypot(horizontal, vertical) || 1;
+            player.vx = horizontal / magnitude * player.speed;
+            player.vy = vertical / magnitude * player.speed;
+            player.x = clamp(player.x + player.vx * delta, 20, pitchWidth - 20);
+            player.y = clamp(player.y + player.vy * delta, 32, pitchHeight - 32);
+
+            moveSupportPlayers(teammates, delta, 1);
+            if (mode !== "training") moveSupportPlayers(rivalPlayers, delta, -1);
+
+            if (mode !== "training") {
+                const targetX = clamp(ball.x + 18, 22, pitchWidth - 22);
+                const targetY = clamp(ball.y, 22, pitchHeight - 22);
+                const dx = targetX - opponent.x;
+                const dy = targetY - opponent.y;
+                const distance = Math.hypot(dx, dy) || 1;
+                opponent.vx = dx / distance * opponent.speed;
+                opponent.vy = dy / distance * opponent.speed;
+                opponent.x = clamp(opponent.x + opponent.vx * delta, 22, pitchWidth - 22);
+                opponent.y = clamp(opponent.y + opponent.vy * delta, 22, pitchHeight - 22);
+                opponentKickCooldown = Math.max(0, opponentKickCooldown - delta);
+                if (distanceTo(opponent, ball) < opponent.radius + ball.radius + 12 && opponentKickCooldown <= 0) {
+                    kickForOpponent(opponent);
+                }
+                rivalPlayers.forEach(rival => {
+                    rival.kickCooldown = Math.max(0, rival.kickCooldown - delta);
+                    if (distanceTo(rival, ball) < rival.radius + ball.radius + 10 && rival.kickCooldown <= 0) {
+                        kickForOpponent(rival);
+                        rival.kickCooldown = 1.1;
+                    }
+                });
+                const chasingHelper = [...rivalPlayers, opponent].sort((first, second) => distanceTo(first, ball) - distanceTo(second, ball))[0];
+                if (distanceTo(chasingHelper, ball) < 28) {
+                    moveSupportPlayers(rivalPlayers, delta, -1);
+                }
+            }
+
+            kickCooldown = Math.max(0, kickCooldown - delta);
+            collideWithBall(player);
+            teammates.forEach(collideWithBall);
+            if (mode !== "training") collideWithBall(opponent);
+            if (mode !== "training") rivalPlayers.forEach(collideWithBall);
+            ball.x += ball.vx * delta;
+            ball.y += ball.vy * delta;
+            const friction = Math.exp(-1.65 * delta);
+            ball.vx *= friction;
+            ball.vy *= friction;
+            if (Math.hypot(ball.vx, ball.vy) < 5) ball.vx = ball.vy = 0;
+
+            const fieldLeft = 16;
+            const fieldRight = pitchWidth - 16;
+            const goalHeight = Math.min(130, pitchHeight * 0.42);
+            const inGoal = Math.abs(ball.y - pitchHeight * 0.5) < goalHeight * 0.5;
+            if (ball.x > fieldRight - 8 && inGoal) scoreGoal(true);
+            else if (ball.x < fieldLeft + 8 && inGoal && mode !== "training") scoreGoal(false);
+            else {
+                if (ball.x < fieldLeft + ball.radius || ball.x > fieldRight - ball.radius) {
+                    ball.x = clamp(ball.x, fieldLeft + ball.radius, fieldRight - ball.radius);
+                    ball.vx *= -0.75;
+                }
+                if (ball.y < ball.radius + 8 || ball.y > pitchHeight - ball.radius - 8) {
+                    ball.y = clamp(ball.y, ball.radius + 8, pitchHeight - ball.radius - 8);
+                    ball.vy *= -0.7;
+                }
+            }
+        }
+
+        function kickForOpponent(footballer) {
+            const aimX = 12 - ball.x;
+            const aimY = pitchHeight * 0.5 - ball.y + (Math.random() - 0.5) * 50;
+            const length = Math.hypot(aimX, aimY) || 1;
+            ball.vx = aimX / length * 360 + footballer.vx * 0.2;
+            ball.vy = aimY / length * 360 + footballer.vy * 0.2;
+            if (footballer === opponent) opponentKickCooldown = 0.9;
+            else footballer.kickCooldown = 1.1;
+        }
+
+        function moveSupportPlayers(players, delta, attackingDirection) {
+            let closestSupporter = null;
+            let closestDistance = Infinity;
+            players.forEach(teammate => {
+                const distance = distanceTo(teammate, ball);
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestSupporter = teammate;
+                }
+            });
+            const secondSupporter = players
+                .filter(teammate => teammate !== closestSupporter)
+                .sort((first, second) => distanceTo(first, ball) - distanceTo(second, ball))[0];
+            players.forEach(teammate => {
+                const progress = clamp(ball.x / pitchWidth, 0, 1) - 0.5;
+                const isChaser = teammate === closestSupporter;
+                const isOutlet = teammate === secondSupporter;
+                const targetX = isChaser
+                    ? clamp(ball.x - 12 * attackingDirection, 18, pitchWidth - 18)
+                    : isOutlet
+                        ? clamp(ball.x + 52 * attackingDirection, 18, pitchWidth - 18)
+                        : clamp(pitchWidth * teammate.formationX + progress * 72 * attackingDirection, 18, pitchWidth - 18);
+                const targetY = isChaser
+                    ? clamp(ball.y + (teammate.formationY < 0.5 ? -14 : 14), 18, pitchHeight - 18)
+                    : isOutlet
+                        ? clamp(ball.y + (teammate.formationY < 0.5 ? -48 : 48), 18, pitchHeight - 18)
+                        : clamp(pitchHeight * teammate.formationY + (ball.y / pitchHeight - 0.5) * 54, 18, pitchHeight - 18);
+                const dx = targetX - teammate.x;
+                const dy = targetY - teammate.y;
+                const distance = Math.hypot(dx, dy);
+                if (distance < 2) {
+                    teammate.vx = 0;
+                    teammate.vy = 0;
+                    return;
+                }
+                const movementSpeed = isChaser ? teammate.speed * 1.8 : isOutlet ? teammate.speed * 1.45 : teammate.speed;
+                teammate.vx = dx / distance * movementSpeed;
+                teammate.vy = dy / distance * movementSpeed;
+                teammate.x += teammate.vx * delta;
+                teammate.y += teammate.vy * delta;
+            });
+            if (attackingDirection > 0 && closestSupporter) {
+                closestSupporter.kickCooldown = Math.max(0, closestSupporter.kickCooldown - delta);
+                if (distanceTo(closestSupporter, ball) < closestSupporter.radius + ball.radius + 8 && closestSupporter.kickCooldown <= 0 && ball.x < pitchWidth * 0.82) {
+                    const aimX = pitchWidth * 0.92 - ball.x;
+                    const aimY = pitchHeight * 0.5 - ball.y + (closestSupporter.formationY - 0.5) * 38;
+                    const length = Math.hypot(aimX, aimY) || 1;
+                    ball.vx = aimX / length * 300 + closestSupporter.vx * 0.16;
+                    ball.vy = aimY / length * 300 + closestSupporter.vy * 0.16;
+                    closestSupporter.kickCooldown = 1.1;
+                }
+            }
+        }
+
+        function updateAutoPlay() {
+            if (!autoPlay) return;
+            const dx = ball.x - player.x;
+            const dy = ball.y - player.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            if (distance > player.radius + ball.radius + 15) {
+                controls.right = dx > 7;
+                controls.left = dx < -7;
+                controls.up = dy < -7;
+                controls.down = dy > 7;
+                return;
+            }
+            controls.right = controls.left = controls.up = controls.down = false;
+            if (kickCooldown > 0) return;
+            const targetY = pitchHeight * 0.5 + (player.y - pitchHeight * 0.5) * 0.16;
+            const aimX = pitchWidth - 12 - ball.x;
+            const aimY = targetY - ball.y;
+            const length = Math.hypot(aimX, aimY) || 1;
+            ball.vx = aimX / length * 470 + player.vx * 0.2;
+            ball.vy = aimY / length * 470 + player.vy * 0.2;
+            kickCooldown = 0.65;
+            playEffect("shot");
+            setStatus("Auto play: your player takes a shot!", 1.1);
+            if (Math.random() < 0.3) announce(`${playerSelect.value} has the ball... looking for the finish!`, "urgent");
+        }
+
+        function distanceTo(first, second) {
+            return Math.hypot(first.x - second.x, first.y - second.y);
+        }
+
+        function collideWithBall(footballer) {
+            let dx = ball.x - footballer.x;
+            let dy = ball.y - footballer.y;
+            let distance = Math.hypot(dx, dy);
+            const minimum = footballer.radius + ball.radius;
+            if (distance >= minimum) return;
+            if (!distance) {
+                dx = 0;
+                dy = 1;
+                distance = 1;
+            }
+            const nx = dx / distance;
+            const ny = dy / distance;
+            ball.x = footballer.x + nx * minimum;
+            ball.y = footballer.y + ny * minimum;
+            ball.vx += nx * 28 + footballer.vx * 0.24;
+            ball.vy += ny * 28 + footballer.vy * 0.24;
+        }
+
+        function drawPitch() {
+            if (!ctx || !pitchWidth || !pitchHeight) return;
+            const w = pitchWidth;
+            const h = pitchHeight;
+            const stadium = stadiums[countrySelect.value];
+            ctx.clearRect(0, 0, w, h);
+            const sky = ctx.createLinearGradient(0, 0, 0, h);
+            sky.addColorStop(0, "#172533");
+            sky.addColorStop(0.25, "#35404b");
+            sky.addColorStop(1, "#101b1a");
+            ctx.fillStyle = sky;
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = stadium.crowd;
+            ctx.fillRect(0, 0, w, 28);
+            ctx.fillRect(0, h - 28, w, 28);
+            for (let x = 8; x < w; x += 15) {
+                const crowdHeight = 6 + (Math.sin(x * 0.09) + 1) * 4;
+                ctx.fillStyle = x % 2 ? "#d6e1d6" : stadium.crowd;
+                ctx.beginPath();
+                ctx.arc(x, 16, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x, h - 16, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillRect(x - 2, 17, 4, Math.min(crowdHeight - 3, 9));
+                ctx.fillRect(x - 2, h - 26, 4, Math.min(crowdHeight - 3, 9));
+            }
+
+            ctx.save();
+            ctx.transform(0.94, 0, 0.045, 1, w * 0.03, 0);
+            const fieldLeft = 16;
+            const fieldRight = w - 16;
+            const fieldTop = 29;
+            const fieldBottom = h - 29;
+            const fieldGradient = ctx.createLinearGradient(0, fieldTop, 0, fieldBottom);
+            fieldGradient.addColorStop(0, stadium.grass);
+            fieldGradient.addColorStop(1, stadium.lightGrass);
+            ctx.fillStyle = fieldGradient;
+            ctx.fillRect(fieldLeft, fieldTop, fieldRight - fieldLeft, fieldBottom - fieldTop);
+            const stripeWidth = (fieldRight - fieldLeft) / 10;
+            for (let stripe = 0; stripe < 10; stripe += 1) {
+                if (stripe % 2 === 0) {
+                    ctx.fillStyle = "rgb(220 255 225 / 5%)";
+                    ctx.fillRect(fieldLeft + stripe * stripeWidth, fieldTop, stripeWidth, fieldBottom - fieldTop);
+                }
+            }
+            const centerX = (fieldLeft + fieldRight) / 2;
+            const centerY = (fieldTop + fieldBottom) / 2;
+            const boxWidth = Math.min((fieldRight - fieldLeft) * 0.15, 92);
+            const boxHeight = Math.min((fieldBottom - fieldTop) * 0.62, 190);
+            ctx.strokeStyle = "rgb(244 255 246 / 78%)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(fieldLeft, fieldTop, fieldRight - fieldLeft, fieldBottom - fieldTop);
+            ctx.beginPath();
+            ctx.moveTo(centerX, fieldTop);
+            ctx.lineTo(centerX, fieldBottom);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, Math.min(h * 0.2, 58), 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = "#eaffee";
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeRect(fieldLeft, centerY - boxHeight / 2, boxWidth, boxHeight);
+            ctx.strokeRect(fieldRight - boxWidth, centerY - boxHeight / 2, boxWidth, boxHeight);
+            const goalHeight = Math.min(130, h * 0.42);
+            ctx.fillStyle = "rgb(222 255 235 / 14%)";
+            ctx.fillRect(fieldLeft - 7, centerY - goalHeight / 2, 7, goalHeight);
+            ctx.fillRect(fieldRight, centerY - goalHeight / 2, 7, goalHeight);
+            ctx.strokeStyle = "rgb(255 255 255 / 72%)";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(fieldLeft - 7, centerY - goalHeight / 2, 9, goalHeight);
+            ctx.strokeRect(fieldRight - 2, centerY - goalHeight / 2, 9, goalHeight);
+
+            if (mode !== "training") {
+                rivalPlayers.forEach(rival => drawMatchCharacter(rival, "#b94850", rival.number, -1, "#b67a5a"));
+                drawMatchCharacter(opponent, "#ed625f", "9", -1, "#c98760");
+            }
+            const skinTone = avatarSkinTones[Math.max(0, [...playerSelect.options].findIndex(option => option.value === playerSelect.value)) % avatarSkinTones.length];
+            teammates.forEach(teammate => drawMatchCharacter(teammate, "#307fc5", teammate.number, 1, "#a96f49"));
+            drawMatchCharacter(player, "#43a7ff", playerNumbers[playerSelect.value], 1, skinTone);
+            drawBall(0.84 + 0.32 * (ball.y / h));
+            ctx.restore();
+            drawBroadcastCamera(w * 0.5, 17, 1);
+            drawBroadcastCamera(w * 0.5, h - 17, -1);
+        }
+
+        function drawMatchCharacter(footballer, shirt, number, facing, skinTone) {
+            const scale = 0.82 + 0.3 * (footballer.y / pitchHeight);
+            ctx.save();
+            ctx.translate(footballer.x, footballer.y);
+            ctx.scale(scale, scale);
+            ctx.rotate(facing > 0 ? Math.PI / 2 : -Math.PI / 2);
+            drawFootballer({ x: 0, y: 0, radius: footballer.radius }, shirt, number, -1, skinTone);
+            ctx.restore();
+        }
+
+        function drawBroadcastCamera(x, y, facing) {
+            ctx.save();
+            ctx.strokeStyle = "#283139";
+            ctx.fillStyle = "#111920";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x, y + 5);
+            ctx.lineTo(x - 5, y + 16);
+            ctx.moveTo(x, y + 5);
+            ctx.lineTo(x + 5, y + 16);
+            ctx.moveTo(x, y + 5);
+            ctx.lineTo(x, y + 17);
+            ctx.stroke();
+            ctx.fillRect(x - 6, y - 5, 12, 9);
+            ctx.beginPath();
+            ctx.moveTo(x - 3, y + facing * 5);
+            ctx.lineTo(x, y + facing * 12);
+            ctx.lineTo(x + 3, y + facing * 5);
+            ctx.closePath();
+            ctx.fillStyle = "#38464f";
+            ctx.fill();
+            ctx.fillStyle = "#ef6964";
+            ctx.beginPath();
+            ctx.arc(x - 2, y - facing * 2, 1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawFootballer(footballer, shirt, number, facing, skinTone) {
+            ctx.save();
+            ctx.shadowColor = "rgb(0 0 0 / 38%)";
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetY = 2;
+            ctx.fillStyle = "#1b2830";
+            ctx.beginPath();
+            ctx.ellipse(footballer.x, footballer.y + 2, footballer.radius * 0.92, footballer.radius * 0.77, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowColor = "transparent";
+
+            const hipY = footballer.y - facing * 2;
+            ctx.strokeStyle = "#26303a";
+            ctx.lineWidth = 4;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(footballer.x - 4, hipY);
+            ctx.lineTo(footballer.x - 5, footballer.y - facing * -13);
+            ctx.moveTo(footballer.x + 4, hipY);
+            ctx.lineTo(footballer.x + 5, footballer.y - facing * -13);
+            ctx.stroke();
+            ctx.fillStyle = "#172331";
+            ctx.fillRect(footballer.x - 8, footballer.y - facing * -13, 6, 3);
+            ctx.fillRect(footballer.x + 2, footballer.y - facing * -13, 6, 3);
+
+            ctx.fillStyle = "#18232c";
+            ctx.beginPath();
+            ctx.roundRect(footballer.x - 11, footballer.y - facing * 1 - 2, 22, 13, 6);
+            ctx.fill();
+            ctx.fillStyle = shirt;
+            ctx.beginPath();
+            ctx.roundRect(footballer.x - 8, footballer.y - 7, 16, 14, 5);
+            ctx.fill();
+            ctx.shadowColor = "transparent";
+            ctx.strokeStyle = "#edf7ff";
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.moveTo(footballer.x - 6, footballer.y - facing * 2);
+            ctx.lineTo(footballer.x - 12, footballer.y + facing * 4);
+            ctx.moveTo(footballer.x + 6, footballer.y - facing * 2);
+            ctx.lineTo(footballer.x + 12, footballer.y + facing * 4);
+            ctx.stroke();
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 8px system-ui";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(number, footballer.x, footballer.y);
+
+            const headX = footballer.x;
+            const headY = footballer.y + facing * 12;
+            ctx.fillStyle = skinTone;
+            ctx.beginPath();
+            ctx.arc(headX, headY, 5.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#29221e";
+            ctx.beginPath();
+            ctx.arc(headX, headY - facing * 2, 5.1, Math.PI, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#25221f";
+            ctx.beginPath();
+            ctx.arc(headX - 1.8, headY + facing * 1.4, 0.65, 0, Math.PI * 2);
+            ctx.arc(headX + 1.8, headY + facing * 1.4, 0.65, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawBall(scale = 1) {
+            ctx.save();
+            ctx.shadowColor = "rgb(0 0 0 / 45%)";
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetY = 2;
+            ctx.fillStyle = "#fff";
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius * scale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowColor = "transparent";
+            ctx.fillStyle = "#27332d";
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius * 0.35 * scale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function gameLoop(timestamp) {
+            const delta = previousFrame ? Math.min((timestamp - previousFrame) / 1000, 0.04) : 0;
+            previousFrame = timestamp;
+            updateGame(delta);
+            if (matchScreen.classList.contains("active")) drawPitch();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function clearControls() {
+            Object.keys(controls).forEach(direction => { controls[direction] = false; });
+            document.querySelectorAll("[data-direction]").forEach(button => button.classList.remove("pressed"));
+        }
+
+        document.querySelectorAll(".mode-button").forEach(button => {
+            button.addEventListener("click", () => startSelectedMode(button.dataset.mode));
+        });
+        countrySelect.addEventListener("change", updateStadium);
+        playerSelect.addEventListener("change", updateStadium);
+        document.querySelector("#cup-enter-button").addEventListener("click", () => startSelectedMode("international"));
+        cupMenuButton.addEventListener("click", () => {
+            setCupDrawerOpen(cupDrawer.classList.contains("open") ? false : true);
+        });
+        document.querySelector("#cup-close").addEventListener("click", () => setCupDrawerOpen(false));
+        homeScreen.addEventListener("click", event => {
+            if (event.target === homeScreen) setCupDrawerOpen(false);
+        });
+        let swipeStartX = null;
+        homeScreen.addEventListener("pointerdown", event => {
+            if (event.pointerType !== "touch" || event.target.closest("button, select, input")) return;
+            swipeStartX = event.clientX;
+        });
+        homeScreen.addEventListener("pointerup", event => {
+            if (swipeStartX === null) return;
+            const deltaX = event.clientX - swipeStartX;
+            const localStart = swipeStartX - homeScreen.getBoundingClientRect().left;
+            swipeStartX = null;
+            if (localStart < 38 && deltaX > 72) setCupDrawerOpen(true);
+            else if (cupDrawer.classList.contains("open") && deltaX < -72) setCupDrawerOpen(false);
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && cupDrawer.classList.contains("open")) setCupDrawerOpen(false);
+        });
+        startButton.addEventListener("click", startOrPauseMatch);
+        document.querySelector("#menu-button").addEventListener("click", returnToMenu);
+        document.querySelector("#resume-button").addEventListener("click", () => {
+            document.querySelector("#pause-overlay").hidden = true;
+            startOrPauseMatch();
+        });
+        document.querySelector("#pause-menu-button").addEventListener("click", returnToMenu);
+        autoPlayButton.addEventListener("click", () => {
+            autoPlay = !autoPlay;
+            autoPlayButton.setAttribute("aria-pressed", String(autoPlay));
+            autoPlayButton.innerHTML = autoPlay ? "AUTO<br><small>ON</small>" : "AUTO<br><small>OFF</small>";
+            if (!autoPlay) clearControls();
+            setStatus(autoPlay ? "Computer is controlling your player" : "Manual controls are on", 1.6);
+            if (autoPlay) announce("The computer takes control. Let's see this team attack!", "excited");
+        });
+        document.querySelector("#options-button").addEventListener("click", () => {
+            primeAudio();
+            document.querySelector("#options-overlay").hidden = false;
+            document.querySelector("#difficulty-select").focus();
+        });
+        document.querySelector("#profile-button").addEventListener("click", () => {
+            document.querySelector("#profile-message").textContent = "No password is requested. Real email or Google sign-in needs an authentication provider.";
+            profileOverlay.hidden = false;
+            document.querySelector("#profile-username").focus();
+        });
+        document.querySelector("#profile-form").addEventListener("submit", event => {
+            event.preventDefault();
+            const username = document.querySelector("#profile-username").value.trim();
+            document.querySelector("#profile-status").textContent = `Demo profile: ${username}. This profile lasts only until you close the page.`;
+            document.querySelector("#profile-message").textContent = "Demo profile created in this page only. Your email was not verified or saved.";
+            profileOverlay.hidden = true;
+            event.currentTarget.reset();
+        });
+        document.querySelector("#google-sign-in-button").addEventListener("click", () => {
+            document.querySelector("#profile-message").textContent = "No sign-in was attempted. Firebase and Google sign-in are not configured for this page.";
+            document.querySelector("#google-setup-help").classList.remove("hidden");
+        });
+        document.querySelector("#premium-button").addEventListener("click", () => {
+            document.querySelector("#checkout-message").textContent = "Payment choices are previews only; don't enter card or bank details.";
+            document.querySelector("#card-preview").classList.add("hidden");
+            premiumOverlay.hidden = false;
+            document.querySelector("#currency-select").focus();
+        });
+        document.querySelector("#currency-select").addEventListener("change", event => {
+            const amount = document.querySelector("#price-amount");
+            const note = document.querySelector("#currency-note");
+            document.querySelector("#checkout-message").textContent = "";
+            document.querySelector("#card-preview").classList.add("hidden");
+            if (event.target.value === "NGN") {
+                amount.value = "2000";
+                note.textContent = "Base demo price: ₦2,000 NGN. Currency conversion is not configured.";
+            } else {
+                amount.value = "";
+                note.textContent = `Enter a display amount in ${event.target.value}. This demo does not fetch exchange rates or convert ₦2,000 NGN.`;
+            }
+        });
+        document.querySelector("#price-amount").addEventListener("input", () => {
+            document.querySelector("#checkout-message").textContent = "";
+        });
+        document.querySelector("#checkout-form").addEventListener("submit", event => {
+            event.preventDefault();
+            const currency = document.querySelector("#currency-select").value;
+            const amount = Number(document.querySelector("#price-amount").value);
+            const amountInput = document.querySelector("#price-amount");
+            const checkoutMessage = document.querySelector("#checkout-message");
+            if (!Number.isFinite(amount) || amount <= 0) {
+                checkoutMessage.textContent = `Enter an amount greater than zero in ${currency} to show the preview. Currency conversion is not configured.`;
+                amountInput.focus();
+                return;
+            }
+            const method = document.querySelector('input[name="payment-method"]:checked').value;
+            const formatted = new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount);
+            const cardPreview = document.querySelector("#card-preview");
+            const cardMethods = ["Verve", "Visa", "Mastercard"];
+            cardPreview.classList.toggle("hidden", !cardMethods.includes(method));
+            checkoutMessage.textContent = cardMethods.includes(method)
+                ? `Preview only: ${formatted} via ${method}. The masked card form is disabled; no card details are collected and no payment is made.`
+                : `Preview only: ${formatted} via ${method}. A real ${method} checkout needs a payment provider; this demo does not open one, charge you, or unlock premium mode.`;
+        });
+        musicToggle.addEventListener("change", () => {
+            if (musicToggle.checked) {
+                customMusicPlayer.pause();
+                primeAudio();
+            } else {
+                stopBackgroundMusic();
+            }
+        });
+        customMusicInput.addEventListener("change", () => {
+            const file = customMusicInput.files && customMusicInput.files[0];
+            if (!file) return;
+            if (!file.type.startsWith("audio/")) {
+                audioStatus.textContent = "Choose an audio file to play.";
+                customMusicInput.value = "";
+                return;
+            }
+            if (customMusicUrl) URL.revokeObjectURL(customMusicUrl);
+            stopBackgroundMusic();
+            musicToggle.checked = false;
+            customMusicUrl = URL.createObjectURL(file);
+            customMusicPlayer.src = customMusicUrl;
+            customMusicPlayer.classList.remove("hidden");
+            audioStatus.textContent = `Playing ${file.name} from this device only. The file is not uploaded.`;
+            const playback = customMusicPlayer.play();
+            if (playback) {
+                playback.catch(() => {
+                    audioStatus.textContent = "Your music is selected. Press Play on the audio controls to start it.";
+                });
+            }
+        });
+        customMusicPlayer.addEventListener("play", () => {
+            stopBackgroundMusic();
+            musicToggle.checked = false;
+        });
+        customMusicPlayer.addEventListener("error", () => {
+            audioStatus.textContent = "This audio file could not be played by your browser. Try a supported MP3, WAV, or OGG file.";
+        });
+        soundToggle.addEventListener("change", () => {
+            audioStatus.textContent = soundToggle.checked ? "Game sound effects are on." : "Game sound effects are off.";
+        });
+        commentatorToggle.addEventListener("change", () => {
+            audioStatus.textContent = commentatorToggle.checked
+                ? "Commentator reactions use your browser's expressive speech voice."
+                : "Commentator voice is off; on-screen match calls remain.";
+            if (!commentatorToggle.checked && "speechSynthesis" in window) window.speechSynthesis.cancel();
+        });
+        document.querySelector("#difficulty-select").addEventListener("change", event => {
+            opponent.speed = difficultySpeeds[event.target.value];
+        });
+        document.querySelector("#help-button").addEventListener("click", () => {
+            document.querySelector("#help-overlay").hidden = false;
+            document.querySelector("#help-overlay .close-overlay").focus();
+        });
+        document.querySelectorAll(".close-overlay").forEach(button => {
+            button.addEventListener("click", () => { button.closest(".overlay").hidden = true; });
+        });
+        document.querySelectorAll(".overlay").forEach(overlay => {
+            overlay.addEventListener("click", event => {
+                if (event.target === overlay && overlay.id !== "pause-overlay") overlay.hidden = true;
+            });
+        });
+        document.querySelector("#pass-button").addEventListener("click", () => kickBall(330, true, "Pass!"));
+        document.querySelector("#kick-button").addEventListener("click", () => kickBall(440, true, "Kick!"));
+        document.querySelector("#shoot-button").addEventListener("click", () => kickBall(570, true, "Shot!"));
+        document.querySelectorAll("[data-direction]").forEach(button => {
+            const direction = button.dataset.direction;
+            const release = event => {
+                if (event) event.preventDefault();
+                controls[direction] = false;
+                button.classList.remove("pressed");
+            };
+            button.addEventListener("pointerdown", event => {
+                event.preventDefault();
+                controls[direction] = true;
+                button.classList.add("pressed");
+                button.setPointerCapture(event.pointerId);
+            });
+            button.addEventListener("pointerup", release);
+            button.addEventListener("pointercancel", release);
+            button.addEventListener("lostpointercapture", release);
+        });
+
+        const keyDirections = {
+            arrowup: "up", w: "up",
+            arrowdown: "down", s: "down",
+            arrowleft: "left", a: "left",
+            arrowright: "right", d: "right"
+        };
+        document.addEventListener("keydown", event => {
+            if (!matchScreen.classList.contains("active")) return;
+            const direction = keyDirections[event.key.toLowerCase()];
+            if (direction) {
+                event.preventDefault();
+                controls[direction] = true;
+            } else if (event.code === "Space" && !event.repeat) {
+                event.preventDefault();
+                kickBall(570, true, "Shot!");
+            } else if (event.key.toLowerCase() === "x" && !event.repeat) {
+                event.preventDefault();
+                kickBall(330, true, "Pass!");
+            } else if (event.key.toLowerCase() === "c" && !event.repeat) {
+                event.preventDefault();
+                kickBall(440, true, "Kick!");
+            } else if (event.key === "Escape") {
+                pauseMatch();
+            }
+        });
+        document.addEventListener("keyup", event => {
+            const direction = keyDirections[event.key.toLowerCase()];
+            if (direction) controls[direction] = false;
+        });
+        window.addEventListener("blur", clearControls);
+        window.addEventListener("resize", fitCanvas);
+        new ResizeObserver(fitCanvas).observe(wrapper);
+        document.addEventListener("pointerdown", primeAudio, { once: true });
+        document.addEventListener("keydown", primeAudio, { once: true });
+        requestAnimationFrame(gameLoop);
+        showLoading("Loading VivaTech Football…", 750);
+    </script>
+</body>
+</html>
